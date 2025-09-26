@@ -10,7 +10,12 @@ export default function SignIn() {
   async function sendLink(e) {
     e.preventDefault();
     setErr("");
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: "https://rr-staff.vercel.app/staff"
+      }
+    });
     if (error) setErr(error.message);
     else setSent(true);
   }
