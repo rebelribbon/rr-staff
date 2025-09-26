@@ -12,9 +12,7 @@ export default function SignIn() {
     setErr("");
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: "https://rr-staff.vercel.app/staff"
-      }
+      options: { emailRedirectTo: "https://rr-staff.vercel.app/staff" }
     });
     if (error) setErr(error.message);
     else setSent(true);
@@ -24,7 +22,7 @@ export default function SignIn() {
     <main style={{ maxWidth: 420, margin: "72px auto", padding: 24, fontFamily: "system-ui" }}>
       <h1>Staff sign in</h1>
       {sent ? (
-        <p>Check your email for a sign in link.</p>
+        <p>Check your email for a sign-in link.</p>
       ) : (
         <form onSubmit={sendLink}>
           <label>Email</label>
@@ -32,7 +30,7 @@ export default function SignIn() {
             type="email"
             required
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="you@company.com"
             style={{ width: "100%", padding: 10, marginTop: 6, marginBottom: 12 }}
           />
