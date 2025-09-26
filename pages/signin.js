@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { getBrowserClient } from "../lib/supabaseBrowser";
 
-
 export default function SignIn() {
   const supabase = getBrowserClient();
   const [email, setEmail] = useState("");
@@ -11,19 +10,26 @@ export default function SignIn() {
   async function sendLink(e) {
     e.preventDefault();
     setErr("");
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: "https://rr-staff.vercel.app/staff" }
-    });
-    if (error) setErr(error.message);
-    else setSent(true);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: "https://rr-staff.vercel.app/staff",
+          shouldCreateUser: true
+        }
+      });
+      if (error) throw error;
+      setSent(true);
+    } catch (e) {
+      setErr(e?.message || "Sign-in failed. Check Supabase Auth settings & env vars.");
+    }
   }
 
   return (
     <main style={{ maxWidth: 420, margin: "72px auto", padding: 24, fontFamily: "system-ui" }}>
       <h1>Staff sign in</h1>
       {sent ? (
-        <p>Check your email for a sign-in link.</p>
+        <p>Check your email for a sign in link.</p>
       ) : (
         <form onSubmit={sendLink}>
           <label>Email</label>
