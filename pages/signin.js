@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { getBrowserClient } from "@/lib/supabaseBrowser";
+import { getBrowserClient } from "../lib/supabaseBrowser";
+
 
 export default function SignIn() {
   const supabase = getBrowserClient();
