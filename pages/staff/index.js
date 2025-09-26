@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-// ⬇ change alias to relative
 import { getBrowserClient } from "../../lib/supabaseBrowser";
+
 
 export default function StaffHome() {
   const supabase = getBrowserClient();
