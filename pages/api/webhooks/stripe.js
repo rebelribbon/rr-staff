@@ -1,6 +1,6 @@
 import Stripe from "stripe";
-// ⬇ change alias to relative
 import { supabaseAdmin } from "../../../lib/supabase";
+
 
 export const config = { api: { bodyParser: false } };
 
