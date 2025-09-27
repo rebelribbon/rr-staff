@@ -21,7 +21,8 @@ export default function SignIn() {
       if (error) throw error;
       setSent(true);
     } catch (e) {
-      setErr(e?.message || "Sign-in failed. Check Supabase Auth settings & env vars.");
+      console.error("signInWithOtp error:", e);
+      setErr(e?.message || "Sign-in failed (network/CORS). See console for details.");
     }
   }
 
@@ -42,7 +43,7 @@ export default function SignIn() {
             style={{ width: "100%", padding: 10, marginTop: 6, marginBottom: 12 }}
           />
           <button type="submit" style={{ padding: "10px 14px" }}>Send link</button>
-          {err && <p style={{ color: "crimson" }}>{err}</p>}
+          {err && <p style={{ color: "crimson", marginTop: 8 }}>{err}</p>}
         </form>
       )}
     </main>
