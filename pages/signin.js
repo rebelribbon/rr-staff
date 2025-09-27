@@ -1,55 +1,33 @@
+import supabaseBrowser from "../lib/supabaseBrowser";
 import { useState } from "react";
-import { getBrowserClient } from "@/lib/supabaseBrowser";
 
 export default function SignIn() {
-  const supabase = getBrowserClient();
+  const supabase = supabaseBrowser();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
-  const [err, setErr] = useState("");
 
-  async function sendLink(e) {
+  async function send(e) {
     e.preventDefault();
-    setErr("");
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: "https://rr-staff.vercel.app/staff", // after clicking email link
-        },
-      });
-      if (error) {
-        setErr(error.message);
-      } else {
-        setSent(true);
-      }
-    } catch (e) {
-      setErr(e.message);
-    }
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: `${location.origin}/staff` },
+    });
+    if (error) alert(error.message);
+    else setSent(true);
   }
 
-  return (
-    <main style={{ maxWidth: 420, margin: "72px auto", padding: 24, fontFamily: "system-ui" }}>
-      <h1>Staff Sign In</h1>
+  if (sent) return <p>Check your email for the magic link</p>;
 
-      {sent ? (
-        <p>✅ Check your email for a sign-in link.</p>
-      ) : (
-        <form onSubmit={sendLink}>
-          <label>Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@company.com"
-            style={{ width: "100%", padding: 10, marginTop: 6, marginBottom: 12 }}
-          />
-          <button type="submit" style={{ padding: "10px 14px" }}>
-            Send Link
-          </button>
-          {err && <p style={{ color: "crimson" }}>{err}</p>}
-        </form>
-      )}
-    </main>
+  return (
+    <form onSubmit={send} style={{ maxWidth: 360, margin: "40px auto" }}>
+      <h2>Staff sign in</h2>
+      <input
+        placeholder="you@email.com"
+        value={email}
+        onChange={(e)=>setEmail(e.target.value)}
+        style={{ width: "100%" }}
+      />
+      <button type="submit" style={{ marginTop: 12 }}>Send link</button>
+    </form>
   );
 }
