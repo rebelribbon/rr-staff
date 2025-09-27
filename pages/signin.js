@@ -29,6 +29,9 @@ export default function SignIn() {
   return (
     <main style={{ maxWidth: 420, margin: "72px auto", padding: 24, fontFamily: "system-ui" }}>
       <h1>Staff sign in</h1>
+      <small style={{opacity:.7,display:"block",marginBottom:8}}>
+        Using: {process.env.NEXT_PUBLIC_SUPABASE_URL}
+      </small>
       {sent ? (
         <p>Check your email for a sign in link.</p>
       ) : (
