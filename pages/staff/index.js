@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getBrowserClient } from "../../lib/supabaseBrowser"; // <-- correct relative path
+import { getBrowserClient } from "../../lib/supabaseBrowser"; // <-- two dots is correct
 
 const STATUSES = [
   "Reviewing",
@@ -20,7 +20,6 @@ export default function Staff() {
 
   useEffect(() => {
     (async () => {
-      // Require login
       const { data: u } = await supabase.auth.getUser();
       if (!u?.user) {
         window.location.href = "/signin";
@@ -46,14 +45,13 @@ export default function Staff() {
   }
 
   async function updateStatus(id, newStatus) {
-    // optimistic UI
-    const old = orders;
-    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
+    const prev = orders;
+    setOrders((cur) => cur.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
 
     const { error } = await supabase.from("orders").update({ status: newStatus }).eq("id", id);
     if (error) {
       alert("Update failed: " + error.message);
-      setOrders(old); // rollback
+      setOrders(prev); // rollback
     }
   }
 
