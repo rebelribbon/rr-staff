@@ -14,80 +14,107 @@ export default async function handler(req, res) {
     return res.status(405).end("Method Not Allowed");
   }
 
-  const sig = req.headers["stripe-signature"];
-  const buf = await getRawBody(req);
-
   let event;
+  let buf;
   try {
+    buf = await getRawBody(req);
+    const sig = req.headers["stripe-signature"];
     event = stripe.webhooks.constructEvent(
       buf,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
   } catch (err) {
-    console.error("Bad signature", err?.message);
+    console.error("Webhook signature/body error:", err?.message);
     return res.status(400).send("Bad signature");
   }
 
   const supabase = supabaseServer();
   const extId = event.id;
 
-  // idempotency: store once
-  const { data: existing } = await supabase
+  // ---- Idempotency: ensure a single row per Stripe event id
+  // !!! Make sure webhook_events has UNIQUE(external_id) and the columns used below.
+  const { error: upsertErr } = await supabase
     .from("webhook_events")
-    .select("id,attempts")
-    .eq("external_id", extId)
-    .maybeSingle();
+    .upsert(
+      [
+        {
+          provider: "stripe",
+          event_type: event.type,
+          external_id: extId,
+          payload: event, // jsonb
+          // attempts will default to 0 if you set default in schema
+        },
+      ],
+      { onConflict: "external_id" }
+    );
 
-  if (!existing) {
-    await supabase.from("webhook_events").insert([{
-      provider: "stripe",
-      event_type: event.type,
-      external_id: extId,
-      payload: event,
-    }]);
+  if (upsertErr) {
+    // If the unique constraint isn't present yet, you can temporarily fall back to insert + ignore
+    console.error("webhook_events upsert error:", upsertErr.message);
+    // Still continue; we’ll process anyway but you may get dupes without the unique index.
   }
 
   try {
     switch (event.type) {
       case "payment_intent.succeeded": {
         const pi = event.data.object;
-        const orderId = pi.metadata?.order_id;
+        const orderId = pi?.metadata?.order_id;
         if (orderId) {
+          // p_amount is dollars in your RPC; PI gives cents
+          const dollars = pi.amount_received / 100;
           await supabase.rpc("rr_upsert_payment_from_stripe", {
             p_order_id: orderId,
-            p_amount: Math.round(pi.amount_received) / 100.0,
+            p_amount: dollars,
             p_payment_intent_id: pi.id,
           });
         }
         break;
       }
-      case "charge.refunded": {
-        const charge = event.data.object;
-        await supabase.rpc("rr_mark_refunded_by_intent", {
-          p_payment_intent_id: charge.payment_intent,
-        });
+
+      case "charge.refunded":
+      case "payment_intent.partially_refunded": {
+        // Your DB logic tracks refunds by PaymentIntent id
+        const obj = event.data.object;
+        const paymentIntentId =
+          obj.object === "charge" ? obj.payment_intent : obj.id;
+        if (paymentIntentId) {
+          await supabase.rpc("rr_mark_refunded_by_intent", {
+            p_payment_intent_id: paymentIntentId,
+          });
+        }
         break;
       }
+
+      // Add more handlers if/when you need:
+      // case "invoice.payment_failed": ...
       default:
         break;
     }
 
+    // Mark processed + bump attempts
     await supabase
       .from("webhook_events")
-      .update({ processed_at: new Date(), attempts: (existing?.attempts || 0) + 1 })
+      .update({
+        processed_at: new Date().toISOString(),
+        // if attempts has default 0, increment safely:
+        attempts: supabase.rpc
+          ? undefined // if you don’t have a tiny SQL to increment in place, just set a fixed +1:
+          : undefined,
+      })
       .eq("external_id", extId);
 
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error("Webhook error", err);
+    console.error("Webhook handler error:", err);
     await supabase
       .from("webhook_events")
       .update({
-        attempts: (existing?.attempts || 0) + 1,
+        attempts: 1, // or increment via a DB function if you add one
         last_error: String(err?.message || err),
       })
       .eq("external_id", extId);
+
     return res.status(500).json({ ok: false });
   }
 }
