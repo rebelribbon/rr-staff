@@ -1,6 +1,6 @@
 {
   "name": "rr-staff",
-  "private": true,
+  "private": "true",
   "scripts": {
     "build": "next build",
     "start": "next start -p 3000"
