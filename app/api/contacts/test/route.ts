@@ -1,6 +1,8 @@
 // app/api/contacts/test/route.ts
 import { NextResponse } from "next/server";
-import { createContact } from "@/lib/google";
+// replace this:
+// import { createContact } from "@/lib/google";
+import { createContact } from "../../../lib/google";
 
 export async function GET() {
   try {
