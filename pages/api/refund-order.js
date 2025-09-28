@@ -1,6 +1,6 @@
 // pages/api/refund-order.js
 import Stripe from "stripe";
-import { supabaseServer } from "../../../lib/supabase"; // you already have this
+import { supabaseServer } from "../../../lib/supabase";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -18,20 +18,35 @@ export default async function handler(req, res) {
 
     const supabase = supabaseServer();
 
-    // Get all payment rows for this order
-    const { data: payments, error } = await supabase
+    // Fetch payment rows for this order
+    const { data, error } = await supabase
       .from("payments")
       .select("provider, provider_id, amount_cents")
       .eq("order_id", order_id);
 
     if (error) throw error;
 
+    // Be SUPER defensive about shape
+    const rows = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : null;
+
+    if (!rows) {
+      return res.status(500).json({
+        ok: false,
+        error: "Payments query did not return an array.",
+        debugShape: Object.keys(data || {}).join(","),
+      });
+    }
+
     let attempted = 0;
     const refunded_intents = [];
     const skipped = [];
 
-    // Refund each positive Stripe payment row
-    for (const p of payments || []) {
+    for (const p of rows) {
+      // Only refund positive Stripe rows
       if (p.provider !== "stripe" || !p.amount_cents || p.amount_cents <= 0) {
         skipped.push(p);
         continue;
@@ -55,8 +70,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error("refund-order error", err);
-    return res
-      .status(500)
-      .json({ ok: false, error: String(err?.message || err) });
+    return res.status(500).json({ ok: false, error: String(err?.message || err) });
   }
 }
