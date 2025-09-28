@@ -3,16 +3,15 @@ import { google } from "googleapis";
 
 export async function GET() {
   try {
-    // Normalize the private key from env:
-    // - If it's pasted with real newlines → keep as-is
-    // - If it's one line with \n → convert to real newlines
-    // - Strip accidental wrapping quotes
+    // Always normalize the private key from env:
+    // - convert literal \n to real newlines
+    // - remove \r
+    // - strip accidental wrapping quotes
     const raw = process.env.GOOGLE_PRIVATE_KEY || "";
-    const privateKey = (
-      raw.includes("BEGIN") ? raw : raw.replace(/\\n/g, "\n")
-    )
-      .replace(/\r/g, "\n")
-      .replace(/^"+|"+$/g, ""); // remove leading/trailing quotes if present
+    const privateKey = raw
+      .replace(/\\n/g, "\n")
+      .replace(/\r/g, "")
+      .replace(/^"+|"+$/g, "");
 
     const auth = new google.auth.JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
@@ -21,7 +20,7 @@ export async function GET() {
         "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/contacts",
       ],
-      subject: process.env.GOOGLE_IMPERSONATE_SUBJECT, // e.g. ops@rebelribbon.com
+      subject: process.env.GOOGLE_IMPERSONATE_SUBJECT,
     });
 
     const calendarId = process.env.GOOGLE_CALENDAR_ID;
@@ -37,16 +36,12 @@ export async function GET() {
         summary: "Rebel Ribbon Test Delivery",
         description: "Created via /api/calendar/test",
         start: { dateTime: start.toISOString() },
-        end:   { dateTime: end.toISOString() },
+        end: { dateTime: end.toISOString() },
       },
     });
 
     return NextResponse.json({ ok: true, eventId: data.id });
   } catch (e) {
-    // Return the message so we can see the next error, but not the key.
-    return new NextResponse(
-      typeof e?.message === "string" ? e.message : "error",
-      { status: 500 }
-    );
+    return new NextResponse(e?.message || "error", { status: 500 });
   }
 }
