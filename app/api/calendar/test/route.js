@@ -3,9 +3,20 @@ import { google } from "googleapis";
 
 export async function GET() {
   try {
+    // Normalize the private key from env:
+    // - If it's pasted with real newlines → keep as-is
+    // - If it's one line with \n → convert to real newlines
+    // - Strip accidental wrapping quotes
+    const raw = process.env.GOOGLE_PRIVATE_KEY || "";
+    const privateKey = (
+      raw.includes("BEGIN") ? raw : raw.replace(/\\n/g, "\n")
+    )
+      .replace(/\r/g, "\n")
+      .replace(/^"+|"+$/g, ""); // remove leading/trailing quotes if present
+
     const auth = new google.auth.JWT({
       email: process.env.GOOGLE_CLIENT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY,
+      key: privateKey,
       scopes: [
         "https://www.googleapis.com/auth/calendar",
         "https://www.googleapis.com/auth/contacts",
@@ -32,6 +43,10 @@ export async function GET() {
 
     return NextResponse.json({ ok: true, eventId: data.id });
   } catch (e) {
-    return new NextResponse(e?.message || "error", { status: 500 });
+    // Return the message so we can see the next error, but not the key.
+    return new NextResponse(
+      typeof e?.message === "string" ? e.message : "error",
+      { status: 500 }
+    );
   }
 }
