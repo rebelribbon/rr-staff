@@ -2,7 +2,11 @@
 import { NextResponse } from "next/server";
 // replace this:
 // import { createContact } from "@/lib/google";
-import { createContact } from "../../../lib/google";
+// replace this line:
+// import { createContact } from "@/lib/google";
+// or "../../../lib/google"
+import { createContact } from "../../../../lib/google";
+
 
 export async function GET() {
   try {
