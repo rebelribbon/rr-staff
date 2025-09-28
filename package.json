@@ -11,6 +11,7 @@
     "react-dom": "18.3.1",
     "stripe": "^14.0.0",
     "raw-body": "^2.5.2",
-    "@supabase/supabase-js": "^2.45.4"
+    "@supabase/supabase-js": "^2.45.4",
+    "googleapis": "^135.0.0"
   }
 }
