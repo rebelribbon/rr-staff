@@ -1,6 +1,9 @@
 // app/api/calendar/test/route.ts
 import { NextResponse } from "next/server";
-import { createCalendarEvent } from "@/lib/google";
+// replace this:
+// import { createCalendarEvent } from "@/lib/google";
+import { createCalendarEvent } from "../../../lib/google";
+
 
 export async function GET() {
   try {
