@@ -2,7 +2,11 @@
 import { NextResponse } from "next/server";
 // replace this:
 // import { createCalendarEvent } from "@/lib/google";
-import { createCalendarEvent } from "../../../lib/google";
+// replace this line:
+// import { createCalendarEvent } from "@/lib/google";
+// or "../../../lib/google"
+import { createCalendarEvent } from "../../../../lib/google";
+
 
 
 export async function GET() {
