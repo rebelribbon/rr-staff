@@ -1,5 +1,6 @@
 // app/api/orders/[id]/mark-paid/route.js
-import { supabaseServer, supabaseClient } from '../../../../lib/supabase';
+import { supabaseServer } from '@/lib/supabase';
+
 
 
 export async function POST(req, { params }) {
