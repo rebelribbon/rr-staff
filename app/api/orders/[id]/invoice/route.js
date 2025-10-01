@@ -1,5 +1,6 @@
 // app/api/orders/[id]/invoice/route.js
-import { supabaseAdmin } from '@/lib/supabase';
+import { supabaseServer, supabaseClient } from '../../../lib/supabase';
+
 
 export async function GET(_req, { params }) {
   try {
